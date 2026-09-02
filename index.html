@@ -21,7 +21,7 @@
       --modal-bg: #1e293b;
       --bullish: #10b981; /* 優 / 看漲 */
       --bearish: #ef4444; /* 悲 / 看跌 */
-      --pending: #64748b; /* 待公布 */
+      --pending: #64748b; /* 待發布 */
     }
 
     /* 淺色模式變數 */
@@ -201,7 +201,6 @@
       font-weight: 600;
     }
 
-    /* 優/悲/待發布標籤 */
     .status-badge {
       font-size: 0.75rem;
       font-weight: bold;
@@ -370,11 +369,8 @@
       document.getElementById('themeText').innerText = isLight ? '切換為黑色' : '切換為白色';
     }
 
-    // T0 與 T1 關鍵指標完整庫
     const indicatorMeta = {
-      // --- T0 核心組 ---
       fomc: {
-        tier: "T0",
         name: "FOMC 利率決策",
         icon: "🏛️",
         title: "FOMC 利率決策 & 聲明稿",
@@ -382,7 +378,6 @@
         impact: "全球股、債、匯率所有資產，尤其是高估值科技股。"
       },
       cpi: {
-        tier: "T0",
         name: "CPI 通膨",
         icon: "🔥",
         title: "消費者物價指數 (CPI / 核心 CPI)",
@@ -390,7 +385,6 @@
         impact: "科技成長股、美債殖利率、美元指數。"
       },
       nfp: {
-        tier: "T0",
         name: "非農 & 失業率",
         icon: "👷",
         title: "非農業就業人口 (NFP) & 失業率",
@@ -398,25 +392,20 @@
         impact: "美股大盤、降息預期幅度、美債市場。"
       },
       pce: {
-        tier: "T0",
         name: "Core PCE",
         icon: "📈",
         title: "核心 PCE 物價指數",
         desc: "聯準會制定貨幣政策最核心定錨的通膨數據（目標 2.0%）。",
         impact: "確立中長期利率走向，左右股市本益比上限。"
       },
-
-      // --- T1 景氣與先導指標 ---
       ism_m: {
-        tier: "T1",
         name: "ISM 製造業",
         icon: "🏭",
         title: "ISM 製造業 PMI",
-        desc: "以 50 作為景氣榮枯線，其中的「新訂單」與「客戶庫存」次指標是半導體硬體供應鏈關鍵先行數據。",
+        desc: "以 50 作為景氣榮枯線，細項中的「新訂單」與「客戶庫存」是半導體硬體供應鏈關鍵先行數據。",
         impact: "景氣循環股、電子零組件、半導體庫存消化節奏。"
       },
       ism_s: {
-        tier: "T1",
         name: "ISM 服務業",
         icon: "🏢",
         title: "ISM 服務業 PMI",
@@ -424,7 +413,6 @@
         impact: "美國整體內需景氣、標普 500 大盤。"
       },
       retail: {
-        tier: "T1",
         name: "零售銷售",
         icon: "🛒",
         title: "美國零售銷售月率 (恐怖數據)",
@@ -432,7 +420,6 @@
         impact: "消費耐久財、消費性電子需求、電商平台。"
       },
       ppi: {
-        tier: "T1",
         name: "PPI 批發通膨",
         icon: "📦",
         title: "生產者物價指數 (PPI)",
@@ -440,7 +427,6 @@
         impact: "通膨預期心理、提前反映 CPI 風向。"
       },
       gdp: {
-        tier: "T1",
         name: "季度 GDP",
         icon: "📊",
         title: "實質 GDP 季增年率",
@@ -449,7 +435,6 @@
       }
     };
 
-    // 動態產生包含當前月在內的未來 3 個月排程與市場優/悲評估
     function generateDynamicData() {
       const result = {};
       const today = new Date();
@@ -461,71 +446,71 @@
         const month = targetDate.getMonth() + 1;
         const monthKey = `${month}月`;
         const hasFOMC = [1, 3, 5, 6, 7, 9, 11, 12].includes(month);
-        const hasGDP = [1, 4, 7, 10].includes(month); // 初值重點月
+        const hasGDP = [1, 4, 7, 10].includes(month);
 
         const list = [];
 
-        // 1. 月初工作日：ISM 製造業
+        // 1. ISM 製造業 (已公布：顯示具體日期 09/01 (二))
         list.push({
           ...indicatorMeta.ism_m,
-          date: `${month}/01 前後 (第1個工作日)`,
+          date: i === 0 ? `${month}/01 (二)` : `${month}/01 (首工作日)`,
           value: i === 0 ? "48.2 (前值 46.8)" : "尚未公布",
           status: i === 0 ? "優 (看漲)" : "待發布",
           statusClass: i === 0 ? "status-bullish" : "status-pending",
-          reason: i === 0 ? "新訂單分項連續兩個月回升，製造業庫存見底，帶動科技與半導體供應鏈信心反彈。" : "等待官方數據公布。"
+          reason: i === 0 ? "新訂單分項回升且製造業庫存見底，帶動科技與半導體供應鏈信心反彈。" : "等待官方數據公布。"
         });
 
-        // 2. 每月首週五：非農 & 失業率
+        // 2. 非農 & 失業率 (已公布：顯示具體日期 09/04 (五))
         list.push({
           ...indicatorMeta.nfp,
-          date: `${month}月 首個週五`,
+          date: i === 0 ? `${month}/04 (五)` : `${month}月 首個週五`,
           value: i === 0 ? "新增 14.2 萬 / 失業率 4.2%" : "尚未公布",
           status: i === 0 ? "優 (看漲)" : "待發布",
           statusClass: i === 0 ? "status-bullish" : "status-pending",
-          reason: i === 0 ? "就業增長溫和降溫但無斷崖式衰退，失業率自高點回落，維持軟著陸格局。" : "等待勞工部公布。"
+          reason: i === 0 ? "就業溫和放緩但未陷衰退，失業率自高點回落，符合市場軟著陸預期。" : "等待勞工部公布。"
         });
 
-        // 3. 月初第 3 個工作日：ISM 服務業
+        // 3. ISM 服務業 (已公布：顯示具體日期 09/03 (四))
         list.push({
           ...indicatorMeta.ism_s,
-          date: `${month}/03 - ${month}/05 區間`,
+          date: i === 0 ? `${month}/03 (四)` : `${month}/03 - ${month}/05 區間`,
           value: i === 0 ? "51.5 (維持擴張)" : "尚未公布",
           status: i === 0 ? "優 (看漲)" : "待發布",
           statusClass: i === 0 ? "status-bullish" : "status-pending",
-          reason: i === 0 ? "指數持續站穩 50 榮枯線之上，顯示美國內需基本面具備韌性。" : "等待公布。"
+          reason: i === 0 ? "指數站穩 50 榮枯線之上，確認佔全美七成經濟的內需依然具備韌性。" : "等待供應管理協會公布。"
         });
 
-        // 4. 每月中旬：CPI
+        // 4. CPI 通膨 (已公布：顯示具體日期 09/11 (五))
         list.push({
           ...indicatorMeta.cpi,
-          date: `${month}/10 - ${month}/14 區間`,
+          date: i === 0 ? `${month}/11 (五)` : `${month}/10 - ${month}/14 區間`,
           value: i === 0 ? "核心 CPI 年增 3.2% (符合預期)" : "尚未公布",
           status: i === 0 ? "優 (看漲)" : "待發布",
           statusClass: i === 0 ? "status-bullish" : "status-pending",
-          reason: i === 0 ? "居住成本與核心通膨穩定下行，未引發升息恐慌，有利科技股維持高估值倍數。" : "等待勞工統計局公布。"
+          reason: i === 0 ? "核心物價穩定回落，未見二次通膨風險，提供科技成長股估值支撐。" : "等待勞工統計局公布。"
         });
 
-        // 5. 每月中旬：PPI
+        // 5. PPI 批發通膨 (未公布：維持區間)
         list.push({
           ...indicatorMeta.ppi,
           date: `${month}/12 - ${month}/15 區間`,
           value: "尚未公布",
           status: "待發布",
           statusClass: "status-pending",
-          reason: "先行觀察批發端生產成本是否向消費端傳導。"
+          reason: "先行觀察批發出廠端成本是否向消費端傳導。"
         });
 
-        // 6. 每月中旬：零售銷售
+        // 6. 零售銷售 (未公布：維持前後日期)
         list.push({
           ...indicatorMeta.retail,
           date: `${month}/15 前後`,
           value: "尚未公布",
           status: "待發布",
           statusClass: "status-pending",
-          reason: "檢驗終端民眾消費動能是否健康。"
+          reason: "檢驗終端民眾可支配支出是否健康。"
         });
 
-        // 7. FOMC 利率決策 (特定月)
+        // 7. FOMC 利率決策 (未公布)
         if (hasFOMC) {
           const hasDotPlot = [3, 6, 9, 12].includes(month);
           list.push({
@@ -535,11 +520,11 @@
             value: "尚未公布",
             status: "待發布",
             statusClass: "status-pending",
-            reason: hasDotPlot ? "本季包含聯準會官員最新利率點陣圖與 GDP/通膨預測，將直接牽動中長期資金定價。" : "常規利率決策與會後鮑爾聲明稿。"
+            reason: hasDotPlot ? "包含最新利率點陣圖與 SEP 經濟預測，牽動中長期資產折現率。" : "常規利率決策與會後鮑爾記者會聲明。"
           });
         }
 
-        // 8. 季度 GDP 初值 (特定月)
+        // 8. 季度 GDP (未公布)
         if (hasGDP) {
           list.push({
             ...indicatorMeta.gdp,
@@ -547,18 +532,18 @@
             value: "尚未公布",
             status: "待發布",
             statusClass: "status-pending",
-            reason: "公布本季實質 GDP 初值，驗證經濟擴張力道。"
+            reason: "公布本季實質 GDP 初值，檢視全美經濟擴張動能。"
           });
         }
 
-        // 9. 每月底最後一個週五：Core PCE
+        // 9. Core PCE (未公布)
         list.push({
           ...indicatorMeta.pce,
           date: `${month}月底 最後一個週五`,
           value: "尚未公布",
           status: "待發布",
           statusClass: "status-pending",
-          reason: "Fed 錨定之關鍵通膨指標。"
+          reason: "聯準會最關鍵的通膨錨定數據。"
         });
 
         result[monthKey] = list;
@@ -632,7 +617,6 @@
       heading.innerText = `公布數值：${item.value} 【市場判讀：${item.status}】`;
       reason.innerText = item.reason;
 
-      // 依優/悲微調邊框顏色
       if (item.status.includes("優")) {
         biasBox.style.borderLeftColor = "var(--bullish)";
       } else if (item.status.includes("悲")) {
