@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>美股總經關鍵數據行事曆</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --card-hover: #334155;
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --primary: #38bdf8;
+      --accent: #f59e0b;
+      --border: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+
+    header p {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+    }
+
+    /* 1. 上方月份切換列 */
+    .month-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      background: var(--card-bg);
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .month-tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px 0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-sub);
+      transition: all 0.2s ease;
+    }
+
+    .month-tab.active {
+      background-color: var(--primary);
+      color: #0f172a;
+    }
+
+    /* 2. 條列式數據清單 */
+    .data-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .data-item {
+      display: flex;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: transform 0.15s, background-color 0.15s;
+    }
+
+    .data-item:hover {
+      background-color: var(--card-hover);
+      transform: translateY(-2px);
+    }
+
+    /* 圖示結構：上方數據名稱、中間圖示、下方公布日期 */
+    .icon-badge-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 110px;
+      padding-right: 16px;
+      border-right: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .badge-name {
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: var(--text-sub);
+      margin-bottom: 4px;
+      white-space: nowrap;
+    }
+
+    .badge-icon {
+      font-size: 2rem;
+      line-height: 1;
+      margin: 2px 0;
+    }
+
+    .badge-date {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-top: 4px;
+      white-space: nowrap;
+    }
+
+    .data-info {
+      padding-left: 16px;
+      flex: 1;
+    }
+
+    .data-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .data-impact-preview {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* 詳細資訊彈跳視窗 (Modal) */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 100;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      max-width: 520px;
+      width: 100%;
+      padding: 24px;
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 18px;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-icon {
+      font-size: 2.2rem;
+    }
+
+    .modal-title h3 {
+      font-size: 1.2rem;
+      color: var(--primary);
+    }
+
+    .modal-title p {
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .detail-section {
+      margin-top: 14px;
+    }
+
+    .detail-section h4 {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      margin-bottom: 4px;
+    }
+
+    .detail-section p {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>美股總經重要數據追蹤</h1>
+      <p>點選項目可查看指標介紹與市場影響</p>
+    </header>
+
+    <div class="month-tabs" id="monthTabs"></div>
+
+    <div class="data-list" id="dataList"></div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <div class="modal-header">
+        <div class="modal-icon" id="mIcon"></div>
+        <div class="modal-title">
+          <h3 id="mTitle"></h3>
+          <p id="mDate"></p>
+        </div>
+      </div>
+      <div class="detail-section">
+        <h4>指標介紹</h4>
+        <p id="mDesc"></p>
+      </div>
+      <div class="detail-section">
+        <h4>主要影響與連動</h4>
+        <p id="mImpact"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 3 個月內的重點數據日程表
+    const economicEvents = {
+      "9月": [
+        {
+          name: "ISM 製造業",
+          icon: "🏭",
+          date: "09/01 (二)",
+          title: "ISM 製造業採購經理人指數 (PMI)",
+          desc: "全美製造業採購經理人的景氣評估指標，以 50 作為榮枯線標準。細項中的「新訂單」與「客戶庫存」是科技硬體與半導體供應鏈的關鍵領先指標。",
+          impact: "景氣循環股、電子零組件、原物料行情。"
+        },
+        {
+          name: "非農 / 失業率",
+          icon: "👷",
+          date: "09/04 (五)",
+          title: "非農業就業人口 (NFP) & 失業率",
+          desc: "由美國勞工部公布，為評估美國就業市場健康狀況與景氣韌性最重要的數據。",
+          impact: "牽動聯準會 (Fed) 利率政策路徑、美元指數、美股整體大盤估值。"
+        },
+        {
+          name: "CPI",
+          icon: "🔥",
+          date: "09/11 (五)",
+          title: "消費者物價指數 (CPI / Core CPI)",
+          desc: "衡量消費者日常購買商品與服務的價格變化，其中不含能源與食品的「核心 CPI」是短線資金最在意的通膨數字。",
+          impact: "科技股（折現率敏感）、長天期公債殖利率、美元。"
+        },
+        {
+          name: "零售銷售",
+          icon: "🛒",
+          date: "09/16 (三)",
+          title: "美國零售銷售月率 (Retail Sales)",
+          desc: "素有市場「恐怖數據」之稱，直接呈現美國終端民眾的消費支出動能。",
+          impact: "消費耐久財、電商板塊、消費性電子產品拉貨信心。"
+        },
+        {
+          name: "FOMC 決策",
+          icon: "🏛️",
+          date: "09/17 (四)",
+          title: "FOMC 利率決策與會後聲明",
+          desc: "聯準會公布基準利率目標區間，並常附帶經濟預測摘要（SEP）與利率點陣圖，為市場定價無風險利率的根本。",
+          impact: "全球股、債、匯幾乎所有資產。"
+        },
+        {
+          name: "Core PCE",
+          icon: "📈",
+          date: "09/25 (五)",
+          title: "核心個人消費支出物價指數 (Core PCE)",
+          desc: "商務部經濟分析局發布，是 Fed 制定通膨目標（2%）時最核心的參考錨點。",
+          impact: "確立中長期利率走向，左右大盤趨勢。"
+        }
+      ],
+      "10月": [
+        {
+          name: "ISM 製造業",
+          icon: "🏭",
+          date: "10/01 (四)",
+          title: "ISM 製造業採購經理人指數 (PMI)",
+          desc: "每月第一個交易日發布，確立新月份製造業基本面景氣基調。",
+          impact: "景氣循環、半導體庫存調整週期。"
+        },
+        {
+          name: "非農 / 失業率",
+          icon: "👷",
+          date: "10/02 (五)",
+          title: "非農業就業人口 (NFP) & 失業率",
+          desc: "每月首週五公布之關鍵就業數據，驗證薪資成長是否維持溫和。",
+          impact: "美債殖利率跳動、利率預期修正。"
+        },
+        {
+          name: "CPI",
+          icon: "🔥",
+          date: "10/13 (二)",
+          title: "消費者物價指數 (CPI)",
+          desc: "檢視租金、服務通膨降溫進程。",
+          impact: "大盤指數震盪、成長股估值敏感度。"
+        },
+        {
+          name: "GDP 初值",
+          icon: "📊",
+          date: "10/29 (四)",
+          title: "第三季 GDP 年化成長率 (季增年率初值)",
+          desc: "美國經濟綜合產出的權威統計，初值（Advance Estimate）對市場影響力最大。",
+          impact: "確認美國景氣是否維持軟著陸，牽動整體大型權值股。"
+        },
+        {
+          name: "Core PCE",
+          icon: "📈",
+          date: "10/30 (五)",
+          title: "核心 PCE 物價指數",
+          desc: "月度通膨定錨，左右 11 月 FOMC 會議定調。",
+          impact: "市場降息/升息預期重塑。"
+        }
+      ],
+      "11月": [
+        {
+          name: "ISM 製造業",
+          icon: "🏭",
+          date: "11/02 (一)",
+          title: "ISM 製造業 PMI",
+          desc: "第 4 季初製造業信心觀察指標。",
+          impact: "製造業供應鏈、科技類股。"
+        },
+        {
+          name: "FOMC 決策",
+          icon: "🏛️",
+          date: "11/05 (四)",
+          title: "FOMC 利率決策會議",
+          desc: "年底前關鍵利率決議與鮑爾政策談話。",
+          impact: "跨年流動性、科技成長股年終行情。"
+        },
+        {
+          name: "非農 / 失業率",
+          icon: "👷",
+          date: "11/06 (五)",
+          title: "非農業就業人口 (NFP)",
+          desc: "第 4 季就業與薪資增長情況。",
+          impact: "資金風險偏好、美債市場。"
+        },
+        {
+          name: "CPI",
+          icon: "🔥",
+          date: "11/12 (四)",
+          title: "消費者物價指數 (CPI)",
+          desc: "年末消費旺季前的通膨壓力監控。",
+          impact: "科技股走勢、美元兌主要貨幣匯率。"
+        },
+        {
+          name: "零售銷售",
+          icon: "🛒",
+          date: "11/17 (二)",
+          title: "零售銷售 (Retail Sales)",
+          desc: "黑五與歐美年底假期購物季前哨戰。",
+          impact: "零售類股、消費性硬體設備供應商。"
+        }
+      ]
+    };
+
+    const monthTabsContainer = document.getElementById("monthTabs");
+    const dataListContainer = document.getElementById("dataList");
+    const months = Object.keys(economicEvents);
+    let activeMonth = months[0];
+
+    function init() {
+      renderTabs();
+      renderList(activeMonth);
+    }
+
+    function renderTabs() {
+      monthTabsContainer.innerHTML = "";
+      months.forEach(month => {
+        const btn = document.createElement("div");
+        btn.className = `month-tab ${month === activeMonth ? 'active' : ''}`;
+        btn.innerText = month;
+        btn.onclick = () => {
+          activeMonth = month;
+          renderTabs();
+          renderList(activeMonth);
+        };
+        monthTabsContainer.appendChild(btn);
+      });
+    }
+
+    function renderList(month) {
+      dataListContainer.innerHTML = "";
+      const items = economicEvents[month] || [];
+
+      items.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "data-item";
+        card.onclick = () => showModal(item);
+
+        // 依要求：上方寫數據名稱、中間 icon、下方寫公布日期
+        card.innerHTML = `
+          <div class="icon-badge-box">
+            <span class="badge-name">${item.name}</span>
+            <span class="badge-icon">${item.icon}</span>
+            <span class="badge-date">${item.date}</span>
+          </div>
+          <div class="data-info">
+            <div class="data-title">${item.title}</div>
+            <div class="data-impact-preview">主要影響：${item.impact}</div>
+          </div>
+        `;
+        dataListContainer.appendChild(card);
+      });
+    }
+
+    function showModal(item) {
+      document.getElementById("mIcon").innerText = item.icon;
+      document.getElementById("mTitle").innerText = item.title;
+      document.getElementById("mDate").innerText = "預計發布：" + item.date;
+      document.getElementById("mDesc").innerText = item.desc;
+      document.getElementById("mImpact").innerText = item.impact;
+      document.getElementById("modalOverlay").classList.add("open");
+    }
+
+    function closeModal() {
+      document.getElementById("modalOverlay").classList.remove("open");
+    }
+
+    init();
+  </script>
+</body>
+</html>
