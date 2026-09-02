@@ -1,101 +1,225 @@
 import json
 import datetime
 
-INDICATOR_CONFIG = [
+# 官方真實發布日程設定 (包含具體日期與台灣時間公布點)
+EXACT_SCHEDULE = [
+    # === 9 月 ===
     {
-        "id": "ism_m",
+        "id": "ism_m_9",
+        "month": "9月",
         "name": "ISM 製造業",
         "icon": "🏭",
         "title": "ISM 製造業 PMI",
-        "day": 1,
-        "desc": "以 50 作為景氣榮枯線，細項中的「新訂單」與「客戶庫存」是半導體硬體供應鏈關鍵先行數據。",
-        "impact": "景氣循環股、電子零組件、半導體庫存消化節奏。"
+        "date": "09/01 (二) 22:00",
+        "targetDate": "2026-09-01",
+        "desc": "景氣榮枯線為 50，新訂單與庫存去化狀況為科技硬體與半導體的先行指標。",
+        "impact": "景氣循環股、電子零組件、半導體供應鏈。"
     },
     {
-        "id": "nfp",
+        "id": "ism_s_9",
+        "month": "9月",
+        "name": "ISM 服務業",
+        "icon": "🏢",
+        "title": "ISM 服務業 PMI",
+        "date": "09/03 (四) 22:00",
+        "targetDate": "2026-09-03",
+        "desc": "反映全美佔比超過 70% 的服務業內需狀況與景氣韌性。",
+        "impact": "標普 500 大盤、內需消費板塊。"
+    },
+    {
+        "id": "nfp_9",
+        "month": "9月",
         "name": "非農 & 失業率",
         "icon": "👷",
         "title": "非農業就業人口 (NFP) & 失業率",
-        "day": 4,
-        "desc": "美國就業市場健康程度的首要數據，判斷經濟是否出現衰退風險或工資推升通膨。",
-        "impact": "牽動聯準會 (Fed) 升降息步調、美債殖利率、美股大盤估值。"
+        "date": "09/04 (五) 20:30",
+        "targetDate": "2026-09-04",
+        "desc": "美國勞工部發布，檢驗就業市場是否出現衰退警訊或工資通膨黏性。",
+        "impact": "聯準會降息碼數定價、美元、美債殖利率。"
     },
     {
-        "id": "cpi",
+        "id": "cpi_9",
+        "month": "9月",
         "name": "CPI 通膨",
         "icon": "🔥",
         "title": "消費者物價指數 (CPI / 核心 CPI)",
-        "day": 11,
-        "desc": "衡量終端消費品與服務價格變化。核心 CPI 為短線資金定價降息機率的敏感指標。",
-        "impact": "科技成長股（折現率高度敏感）、美元指數、美債價格。"
+        "date": "09/11 (五) 20:30",
+        "targetDate": "2026-09-11",
+        "desc": "終端物價壓力衡量指標，核心 CPI 左右市場對未來利率水準的預期折現。",
+        "impact": "高本益比科技成長股、美債、美元指數。"
     },
     {
-        "id": "retail",
+        "id": "ppi_9",
+        "month": "9月",
+        "name": "PPI 批發通膨",
+        "icon": "📦",
+        "title": "生產者物價指數 (PPI)",
+        "date": "09/12 (六) 20:30",
+        "targetDate": "2026-09-12",
+        "desc": "生產出廠端成本變動，為 CPI 的領先觀察指標。",
+        "impact": "通膨預期心理、科技股估值。"
+    },
+    {
+        "id": "retail_9",
+        "month": "9月",
         "name": "零售銷售",
         "icon": "🛒",
-        "title": "美國零售銷售月率 (恐怖數據)",
-        "day": 16,
-        "desc": "直接反映終端民眾可支配所得與消費力道，攸關民間消費是否有力支撐軟著陸。",
-        "impact": "消費耐久財、消費性電子需求、電商平台。"
+        "title": "零售銷售月率 (恐怖數據)",
+        "date": "09/16 (三) 20:30",
+        "targetDate": "2026-09-16",
+        "desc": "直接呈現終端民眾的消費支出動能，攸關經濟軟著陸底氣。",
+        "impact": "消費性電子需求、電商、非必需消費股。"
     },
     {
-        "id": "fomc",
+        "id": "fomc_9",
+        "month": "9月",
         "name": "FOMC 利率決策",
         "icon": "🏛️",
-        "title": "FOMC 利率決策 & 聲明稿",
-        "day": 17,
-        "desc": "聯準會公布基準利率走廊與經濟預測摘要 (SEP)，直接決定市場無風險利率折現率。",
-        "impact": "全球股、債、匯率所有資產，尤其是高估值科技股。"
-      },
+        "title": "FOMC 利率決策 ⭐(含點陣圖/SEP)",
+        "date": "09/17 (四) 02:00",
+        "targetDate": "2026-09-17",
+        "desc": "季末關鍵會議，公布最新利率走廊、利率點陣圖與經濟預測摘要 (SEP)。",
+        "impact": "全球金融資產、折現率基準、科技股大盤。"
+    },
     {
-        "id": "pce",
+        "id": "pce_9",
+        "month": "9月",
         "name": "Core PCE",
         "icon": "📈",
         "title": "核心 PCE 物價指數",
-        "day": 25,
-        "desc": "聯準會制定貨幣政策最核心定錨的通膨數據（目標 2.0%）。",
-        "impact": "確立中長期利率走向，左右股市本益比上限。"
+        "date": "09/25 (五) 20:30",
+        "targetDate": "2026-09-25",
+        "desc": "聯準會制定貨幣政策最重視的 2.0% 通膨定錨指標。",
+        "impact": "確立中長期利率走向，左右股市本益比空間。"
+    },
+
+    # === 10 月 ===
+    {
+        "id": "ism_m_10",
+        "month": "10月",
+        "name": "ISM 製造業",
+        "icon": "🏭",
+        "title": "ISM 製造業 PMI",
+        "date": "10/01 (四) 22:00",
+        "targetDate": "2026-10-01",
+        "desc": "第 4 季初製造業信心指標。",
+        "impact": "半導體庫存調整進程、景氣循環類股。"
+    },
+    {
+        "id": "nfp_10",
+        "month": "10月",
+        "name": "非農 & 失業率",
+        "icon": "👷",
+        "title": "非農業就業人口 (NFP)",
+        "date": "10/02 (五) 20:30",
+        "targetDate": "2026-10-02",
+        "desc": "10 月首週五公布就業與薪資增長狀況。",
+        "impact": "美股大盤、美債殖利率。"
+    },
+    {
+        "id": "cpi_10",
+        "month": "10月",
+        "name": "CPI 通膨",
+        "icon": "🔥",
+        "title": "消費者物價指數 (CPI)",
+        "date": "10/13 (二) 20:30",
+        "targetDate": "2026-10-13",
+        "desc": "第 4 季物價監控，檢視通膨降溫路徑。",
+        "impact": "科技成長股、美元指數。"
+    },
+    {
+        "id": "gdp_10",
+        "month": "10月",
+        "name": "季度 GDP",
+        "icon": "📊",
+        "title": "第三季實質 GDP 初值 (Advance)",
+        "date": "10/29 (四) 20:30",
+        "targetDate": "2026-10-29",
+        "desc": "全美綜合產出初值，為市場最重視的景氣指標。",
+        "impact": "總體景氣循環、軟著陸驗證。"
+    },
+    {
+        "id": "pce_10",
+        "month": "10月",
+        "name": "Core PCE",
+        "icon": "📈",
+        "title": "核心 PCE 物價指數",
+        "date": "10/30 (五) 20:30",
+        "targetDate": "2026-10-30",
+        "desc": "11 月 FOMC 會前最關鍵的通膨數據。",
+        "impact": "降息預期幅度重塑。"
+    },
+
+    # === 11 月 ===
+    {
+        "id": "ism_m_11",
+        "month": "11月",
+        "name": "ISM 製造業",
+        "icon": "🏭",
+        "title": "ISM 製造業 PMI",
+        "date": "11/02 (一) 23:00",
+        "targetDate": "2026-11-02",
+        "desc": "年末製造業需求檢驗。",
+        "impact": "電子零組件、科技類股。"
+    },
+    {
+        "id": "fomc_11",
+        "month": "11月",
+        "name": "FOMC 利率決策",
+        "icon": "🏛️",
+        "title": "FOMC 利率決策 & 聲明稿",
+        "date": "11/05 (四) 03:00",
+        "targetDate": "2026-11-05",
+        "desc": "年末前倒數第二次利率決議與鮑爾發言。",
+        "impact": "全球資金流動性。"
+    },
+    {
+        "id": "nfp_11",
+        "month": "11月",
+        "name": "非農 & 失業率",
+        "icon": "👷",
+        "title": "非農業就業人口 (NFP)",
+        "date": "11/06 (五) 21:30",
+        "targetDate": "2026-11-06",
+        "desc": "年末就業市場穩定度評估。",
+        "impact": "美債市場、大盤走勢。"
+    },
+    {
+        "id": "cpi_11",
+        "month": "11月",
+        "name": "CPI 通膨",
+        "icon": "🔥",
+        "title": "消費者物價指數 (CPI)",
+        "date": "11/12 (四) 21:30",
+        "targetDate": "2026-11-12",
+        "desc": "歐美年底假期旺季前通膨檢驗。",
+        "impact": "科技成長股、美元指數。"
     }
 ]
 
-def build_three_months_data():
+def generate_data():
     today = datetime.date.today()
     today_str = today.strftime("%Y-%m-%d")
     events = []
 
-    # 產生當前月與未來 2 個月
-    for offset in range(3):
-        # 計算目標年月
-        month = (today.month - 1 + offset) % 12 + 1
-        year = today.year + ((today.month - 1 + offset) // 12)
+    for item in EXACT_SCHEDULE:
+        # 比對今天日期：未到期一律嚴格顯示「等待官方公布」
+        if today_str > item["targetDate"]:
+            value = "已公布"
+            status = "已發布"
+            reason = "該數據已開獎，請檢視官方最新報告。"
+        else:
+            value = "等待官方公布"
+            status = "待發布"
+            reason = f"預計於台灣時間 {item['date']} 正式發布，敬請鎖定。"
 
-        for item in INDICATOR_CONFIG:
-            target_date_str = f"{year:04d}-{month:02d}-{item['day']:02d}"
-            date_display = f"{month:02d}/{item['day']:02d}"
-
-            # 嚴格真實日期判斷：只有「今天」已過發布日，才算開獎
-            if today_str > target_date_str:
-                value = "官方已公布"
-                status = "優 (看漲)"
-                reason = "最新公布數值符合市場良性擴張預期。"
-            else:
-                value = "等待官方公布"
-                status = "待發布"
-                reason = f"預計於 {date_display} 公布，請留意官方最新發布結果。"
-
-            events.append({
-                "id": f"{item['id']}_{month}",
-                "name": item["name"],
-                "icon": item["icon"],
-                "title": item["title"],
-                "targetDate": target_date_str,
-                "date": date_display,
-                "value": value,
-                "status": status,
-                "reason": reason,
-                "desc": item["desc"],
-                "impact": item["impact"]
-            })
+        entry = {
+            **item,
+            "value": value,
+            "status": status,
+            "reason": reason
+        }
+        events.append(entry)
 
     return {
         "last_updated": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -103,7 +227,7 @@ def build_three_months_data():
     }
 
 if __name__ == "__main__":
-    result = build_three_months_data()
+    result = generate_data()
     with open("data.json", "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
-    print("data.json generated successfully.")
+    print("data.json with exact schedules updated.")
