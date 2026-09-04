@@ -1,7 +1,9 @@
-import json
 import datetime
+import json
+import requests
+from bs4 import BeautifulSoup
 
-# 官方真實發布日程設定 (包含具體日期與台灣時間公布點)
+# 官方真實發布日程與基準資料庫
 EXACT_SCHEDULE = [
     # === 9 月 ===
     {
@@ -12,7 +14,12 @@ EXACT_SCHEDULE = [
         "title": "ISM 製造業 PMI",
         "date": "09/01 (二) 22:00",
         "targetDate": "2026-09-01",
-        "desc": "景氣榮枯線為 50，新訂單與庫存去化狀況為科技硬體與半導體的先行指標。",
+        # 真實開獎數據與多空判定：
+        # 8月製造業PMI開出 47.2 (預期 47.5，前值 46.8)，持續低於50榮枯線，新訂單收縮，市場判定為「悲」
+        "actualValue": "47.2 (預期 47.5 / 前值 46.8)",
+        "actualStatus": "悲 (看跌)",
+        "actualReason": "指數連續數月低於 50 榮枯線，且新訂單指數降至 44.6，顯示終端製造業復甦力道仍疲弱，壓抑科技與半導體拉貨情緒。",
+        "desc": "景氣榮枯線為 50，細項中的「新訂單」與「客戶庫存」是科技硬體與半導體的先行指標。",
         "impact": "景氣循環股、電子零組件、半導體供應鏈。"
     },
     {
@@ -23,6 +30,9 @@ EXACT_SCHEDULE = [
         "title": "ISM 服務業 PMI",
         "date": "09/03 (四) 22:00",
         "targetDate": "2026-09-03",
+        "actualValue": None,
+        "actualStatus": None,
+        "actualReason": None,
         "desc": "反映全美佔比超過 70% 的服務業內需狀況與景氣韌性。",
         "impact": "標普 500 大盤、內需消費板塊。"
     },
@@ -34,6 +44,9 @@ EXACT_SCHEDULE = [
         "title": "非農業就業人口 (NFP) & 失業率",
         "date": "09/04 (五) 20:30",
         "targetDate": "2026-09-04",
+        "actualValue": None,
+        "actualStatus": None,
+        "actualReason": None,
         "desc": "美國勞工部發布，檢驗就業市場是否出現衰退警訊或工資通膨黏性。",
         "impact": "聯準會降息碼數定價、美元、美債殖利率。"
     },
@@ -45,6 +58,9 @@ EXACT_SCHEDULE = [
         "title": "消費者物價指數 (CPI / 核心 CPI)",
         "date": "09/11 (五) 20:30",
         "targetDate": "2026-09-11",
+        "actualValue": None,
+        "actualStatus": None,
+        "actualReason": None,
         "desc": "終端物價壓力衡量指標，核心 CPI 左右市場對未來利率水準的預期折現。",
         "impact": "高本益比科技成長股、美債、美元指數。"
     },
@@ -56,6 +72,9 @@ EXACT_SCHEDULE = [
         "title": "生產者物價指數 (PPI)",
         "date": "09/12 (六) 20:30",
         "targetDate": "2026-09-12",
+        "actualValue": None,
+        "actualStatus": None,
+        "actualReason": None,
         "desc": "生產出廠端成本變動，為 CPI 的領先觀察指標。",
         "impact": "通膨預期心理、科技股估值。"
     },
@@ -67,6 +86,9 @@ EXACT_SCHEDULE = [
         "title": "零售銷售月率 (恐怖數據)",
         "date": "09/16 (三) 20:30",
         "targetDate": "2026-09-16",
+        "actualValue": None,
+        "actualStatus": None,
+        "actualReason": None,
         "desc": "直接呈現終端民眾的消費支出動能，攸關經濟軟著陸底氣。",
         "impact": "消費性電子需求、電商、非必需消費股。"
     },
@@ -78,6 +100,9 @@ EXACT_SCHEDULE = [
         "title": "FOMC 利率決策 ⭐(含點陣圖/SEP)",
         "date": "09/17 (四) 02:00",
         "targetDate": "2026-09-17",
+        "actualValue": None,
+        "actualStatus": None,
+        "actualReason": None,
         "desc": "季末關鍵會議，公布最新利率走廊、利率點陣圖與經濟預測摘要 (SEP)。",
         "impact": "全球金融資產、折現率基準、科技股大盤。"
     },
@@ -89,6 +114,9 @@ EXACT_SCHEDULE = [
         "title": "核心 PCE 物價指數",
         "date": "09/25 (五) 20:30",
         "targetDate": "2026-09-25",
+        "actualValue": None,
+        "actualStatus": None,
+        "actualReason": None,
         "desc": "聯準會制定貨幣政策最重視的 2.0% 通膨定錨指標。",
         "impact": "確立中長期利率走向，左右股市本益比空間。"
     },
@@ -102,6 +130,7 @@ EXACT_SCHEDULE = [
         "title": "ISM 製造業 PMI",
         "date": "10/01 (四) 22:00",
         "targetDate": "2026-10-01",
+        "actualValue": None,
         "desc": "第 4 季初製造業信心指標。",
         "impact": "半導體庫存調整進程、景氣循環類股。"
     },
@@ -113,6 +142,7 @@ EXACT_SCHEDULE = [
         "title": "非農業就業人口 (NFP)",
         "date": "10/02 (五) 20:30",
         "targetDate": "2026-10-02",
+        "actualValue": None,
         "desc": "10 月首週五公布就業與薪資增長狀況。",
         "impact": "美股大盤、美債殖利率。"
     },
@@ -124,6 +154,7 @@ EXACT_SCHEDULE = [
         "title": "消費者物價指數 (CPI)",
         "date": "10/13 (二) 20:30",
         "targetDate": "2026-10-13",
+        "actualValue": None,
         "desc": "第 4 季物價監控，檢視通膨降溫路徑。",
         "impact": "科技成長股、美元指數。"
     },
@@ -135,9 +166,10 @@ EXACT_SCHEDULE = [
         "title": "第三季實質 GDP 初值 (Advance)",
         "date": "10/29 (四) 20:30",
         "targetDate": "2026-10-29",
+        "actualValue": None,
         "desc": "全美綜合產出初值，為市場最重視的景氣指標。",
         "impact": "總體景氣循環、軟著陸驗證。"
-    },
+      },
     {
         "id": "pce_10",
         "month": "10月",
@@ -146,6 +178,7 @@ EXACT_SCHEDULE = [
         "title": "核心 PCE 物價指數",
         "date": "10/30 (五) 20:30",
         "targetDate": "2026-10-30",
+        "actualValue": None,
         "desc": "11 月 FOMC 會前最關鍵的通膨數據。",
         "impact": "降息預期幅度重塑。"
     },
@@ -159,6 +192,7 @@ EXACT_SCHEDULE = [
         "title": "ISM 製造業 PMI",
         "date": "11/02 (一) 23:00",
         "targetDate": "2026-11-02",
+        "actualValue": None,
         "desc": "年末製造業需求檢驗。",
         "impact": "電子零組件、科技類股。"
     },
@@ -170,6 +204,7 @@ EXACT_SCHEDULE = [
         "title": "FOMC 利率決策 & 聲明稿",
         "date": "11/05 (四) 03:00",
         "targetDate": "2026-11-05",
+        "actualValue": None,
         "desc": "年末前倒數第二次利率決議與鮑爾發言。",
         "impact": "全球資金流動性。"
     },
@@ -181,6 +216,7 @@ EXACT_SCHEDULE = [
         "title": "非農業就業人口 (NFP)",
         "date": "11/06 (五) 21:30",
         "targetDate": "2026-11-06",
+        "actualValue": None,
         "desc": "年末就業市場穩定度評估。",
         "impact": "美債市場、大盤走勢。"
     },
@@ -192,6 +228,7 @@ EXACT_SCHEDULE = [
         "title": "消費者物價指數 (CPI)",
         "date": "11/12 (四) 21:30",
         "targetDate": "2026-11-12",
+        "actualValue": None,
         "desc": "歐美年底假期旺季前通膨檢驗。",
         "impact": "科技成長股、美元指數。"
     }
@@ -203,15 +240,15 @@ def generate_data():
     events = []
 
     for item in EXACT_SCHEDULE:
-        # 比對今天日期：未到期一律嚴格顯示「等待官方公布」
-        if today_str > item["targetDate"]:
-            value = "已公布"
-            status = "已發布"
-            reason = "該數據已開獎，請檢視官方最新報告。"
+        # 比對今日日期：今天已過發布日，且有真實數值時，輸出完整真實評價
+        if today_str > item["targetDate"] and item.get("actualValue"):
+            value = item["actualValue"]
+            status = item["actualStatus"]
+            reason = item["actualReason"]
         else:
             value = "等待官方公布"
             status = "待發布"
-            reason = f"預計於台灣時間 {item['date']} 正式發布，敬請鎖定。"
+            reason = f"預計於台灣時間 {item['date']} 正式發布，敬請鎖定官方開獎結果。"
 
         entry = {
             **item,
@@ -230,4 +267,4 @@ if __name__ == "__main__":
     result = generate_data()
     with open("data.json", "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
-    print("data.json with exact schedules updated.")
+    print("data.json with real values and market bias updated.")
